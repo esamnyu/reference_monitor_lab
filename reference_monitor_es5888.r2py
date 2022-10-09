@@ -32,13 +32,18 @@ class ABFile():
       self.Bfile = openfile(self.Bfn,create)
       self.Afile.writeat('SE', 0)
 
-
+# What exactly defines the EOF for a file? Is it the existing data in a file?
+# If the offset or the length of the data is greater than the length of the existing data in a file, then this is False
+# The pre-defined length of a file is always 2, assuming that "SE" is written in the file
+# This is because a check for "SE" occurs      
   def writeat(self,data,offset):
     
     # Write the requested data to the B file using the sandbox's writeat call
     if len(self.Bfile.readat(None, 0)) < len(data):
       return None
-    elif len(data) <= len(self.Bfile.readat(None, 0))
+    elif len(self.Bfile.readat(None, 0)) < offset:
+      return None  
+    elif len(data) <= len(self.Bfile.readat(None, 0)): 
       self.Bfile.writeat(data,offset)
 
   
