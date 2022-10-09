@@ -39,8 +39,10 @@ class ABFile():
   def writeat(self,data,offset):
     
     # Write the requested data to the B file using the sandbox's writeat call
+    #Check if the length of the string in the current file is less then the data being written to the file
     if len(self.Bfile.readat(None, 0)) < len(data):
       return None
+    #Check if the length of the string in the current file is less than the offset of the novel data   
     elif len(self.Bfile.readat(None, 0)) < offset:
       return None  
     elif len(data) <= len(self.Bfile.readat(None, 0)): 
@@ -50,10 +52,16 @@ class ABFile():
   def readat(self,bytes,offset):
     # Read from the A file using the sandbox's readat...
     return self.Afile.readat(bytes,offset)
-
+  # This closes an open file  
+  # Requirement 2: Before the file can be closed, we must check if the first chaaracter is a S and the last chaaracter is an E 
   def close(self):
+  first_character = len(self.Bfile.readat(1, 0))
+  last_character = len(self.Bfile.readat(None, 0)-1)
+  if first_character == 'S' and last_character == 'E': 
     self.Afile.close()
     self.Bfile.close()
+  else:
+    return None
 
 
 def ABopenfile(filename, create):
