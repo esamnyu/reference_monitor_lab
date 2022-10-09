@@ -25,7 +25,7 @@ class ABFile():
     # local (per object) reference to the underlying file
     self.Afn = filename+'.a'
     self.Bfn = filename+'.b'
-    log(self.Afn, self.Bfn)
+    # log(self.Afn, self.Bfn)
     # make the files and add 'SE' to the readat file...
     if create:
       self.Afile = openfile(self.Afn,create)
