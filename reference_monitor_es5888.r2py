@@ -37,32 +37,52 @@ class ABFile():
 # The pre-defined length of a file is always 2, assuming that "SE" is written in the file
 # This is because a check for "SE" occurs      
   def writeat(self,data,offset):
-    
+    """
+        if len(data) <= len(self.Bfile.readat(None, 0)): 
+      if Bfile.readat(1, 0)) == 'S':
+        self.Bfile.writeat(data, offset+1)
+        self.Bfile.writeat('E', last_character_e)
+    """
     # Write the requested data to the B file using the sandbox's writeat call
     #Check if the length of the string in the current file is less then the data being written to the file
     if len(self.Bfile.readat(None, 0)) < len(data):
       return None
     #Check if the length of the string in the current file is less than the offset of the novel data   
-    elif len(self.Bfile.readat(None, 0)) < offset:
+    if len(self.Bfile.readat(None, 0)) < offset:
       return None  
-    elif len(data) <= len(self.Bfile.readat(None, 0)): 
+    if len(data) <= len(self.Bfile.readat(None, 0)): 
       self.Bfile.writeat(data,offset)
 
   
   def readat(self,bytes,offset):
-    # Read from the A file using the sandbox's readat...
+  # Read from the A file using the sandbox's readat...
     return self.Afile.readat(bytes,offset)
   # This closes an open file  
   # Requirement 2: Before the file can be closed, we must check if the first chaaracter is a S and the last chaaracter is an E 
+  
+  # When close() is called on the file, if both filename.a and filename.b are valid, the original file's data 
+  # is replaced with the data of filename.b. If filename.b is not valid, no changes are made.
   def close(self):
-  first_character = len(self.Bfile.readat(1, 0))
-  last_character = len(self.Bfile.readat(None, 0)-1)
-  if first_character == 'S' and last_character == 'E': 
+  """
+  #Write a check for the close function 
+
+  bool valid_a, valid_e
+    #Check to make sure these are actually reading at the beginning and the end of their respective files 
+    first_characterA = self.Afile.readat(1, 0))
+    last_characterA = self.Bfile.readat(None, 0))-1
+    first_characterB = self.Bfile.readat(1, 0))
+    last_characterB = self.Afile.readat(None, 0)-1)
+  """
+
+  if first_characterA == 'S' and last_characterA == 'E':
+    valid_a = True 
+  if first_characterB == 'S' and last_characterB == 'E'
+    valid_b = True
+
+if valid_a and valid_b == True
+  self.Afile.writeat(self.Bfile)
     self.Afile.close()
     self.Bfile.close()
-  else:
-    return None
-
 
 def ABopenfile(filename, create):
   return ABFile(filename,create)
