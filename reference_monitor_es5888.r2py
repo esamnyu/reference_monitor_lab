@@ -17,7 +17,6 @@ TARGET="target"
 FUNC="func"
 OBJC="objc"
 
-mycontext['lock']= createlock()
 class ABFile():
   def __init__(self,filename,create):
     # globals
@@ -25,7 +24,6 @@ class ABFile():
     # local (per object) reference to the underlying file
     self.Afn = filename+'.a'
     self.Bfn = filename+'.b'
-    #log(self.Afn, self.Bfn)
 
     # make the files and add 'SE' to the readat file...
     if create:
@@ -37,44 +35,45 @@ class ABFile():
   def writeat(self,data,offset):
     # Write the requested data to the B file using the sandbox's writeat call
     if len(self.Bfile.readat(None, 0)) < len(data):
-      return None
-    #Check if the length of the string in the current file is less than the offset of the novel data   
+    	return None
     if len(self.Bfile.readat(None, 0)) < offset:
-      return None  
-    if len(data) <= len(self.Bfile.readat(None, 0)): 
-      self.Bfile.writeat(data,offset)
+      return None
+    if len(data) <= len(self.Bfile.readat(None, 0)):
+      self.Bfile.writeat(data, offset)
   
   def readat(self,bytes,offset):
     # Read from the A file using the sandbox's readat...
     return self.Afile.readat(bytes,offset)
+     
+
 
   def close(self):
-    valid_a = False 
-    valid_b = False
-    #Check to make sure these are actually reading at the beginning and the end of their respective files 
-    first_character_a = self.Afile.readat(1, 0)
-    end_position_a = len(self.Afile.readat(None, 0)) - 1
-    last_character_a = self.Afile.readat(None, end_position_a)
-    
-    log(first_character_a, last_character_a)
-
-    first_character_b = self.Bfile.readat(1, 0)
-    end_position_b = len(self.Bfile.readat(None, 0)) - 1 
-    last_character_b = self.Bfile.readat(None, end_position_b)
-
-    log(first_character_b, last_character_b)
-
-    if first_character_a == 'S' and last_character_a == 'E':
-      valid_a = True 
-    if first_character_b == 'S' and last_character_b == 'E':
-      valid_b = True
-
-      contents_b = self.Bfile.readat(None, 0)
-
-    if valid_a == True and valid_b == True:
-      self.Afile.writeat(contents_b, 0)
+    #Important things to remember when closing a file:
+    # Check for file starting with 'S' and ending with 'E'
+    # Backup file is a copy of file A
+    backup_data_a = self.Afile.readat(None,0)
+    data = self.Bfile.readat(None,0)
+    backup_file_a = self.Afn
+    # We check if file B is valid as S 
+    if self.Bfile.readat(None,0).startswith("S") and self.Bfile.readat(None,0).endswith("E"):
+      #File B is Valid and Closing A and B
       self.Afile.close()
       self.Bfile.close()
+      #Discard File A
+      removefile(self.Afn)
+      #New Backup File
+      openfile(backup_file_a, True).writeat(data,0)
+      #Discard File B
+      removefile(self.Bfn)
+    else:
+      # If file be is invalid, missing the 'S' and 'E' requuirement, then Discard file B, keep file A
+      self.Afile.close()
+      self.Bfile.close()
+      removefile(self.Afn)
+      openfile(backup_file_a ,True).writeat(backup_data_a,0)
+      removefile(self.Bfn)
+
+
 
 def ABopenfile(filename, create):
   return ABFile(filename,create)
@@ -95,4 +94,3 @@ CHILD_CONTEXT_DEF["ABopenfile"] = {TYPE:OBJC,ARGS:(str,bool),EXCP:Exception,RETU
 
 # Execute the user code
 secure_dispatch_module()
-
