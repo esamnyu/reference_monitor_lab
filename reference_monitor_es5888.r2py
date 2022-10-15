@@ -41,7 +41,7 @@ class ABFile():
     else:
       #if create is False
       if self.Afn in listfiles():
-        #File Exists
+        #Then the file exists
         self.Afile = openfile(self.Afn,True)
         self.Bfile = openfile(self.Bfn,True)
         self.Bfile.writeat(self.Afile.readat(None,0),0)
@@ -52,19 +52,65 @@ class ABFile():
 
   def writeat(self,data,offset):
     # Write the requested data to the B file using the sandbox's writeat call
-    if len(self.Bfile.readat(None, 0)) < len(data):
-    	return None
-    if len(self.Bfile.readat(None, 0)) < offset:
-      return None
-    if len(data) <= len(self.Bfile.readat(None, 0)):
-      self.Bfile.writeat(data, offset)
-  
+    # if len(self.Bfile.readat(None, 0)) < len(data):
+    # 	return None
+    # if len(self.Bfile.readat(None, 0)) < offset:
+    #   return None
+    # if len(data) <= len(self.Bfile.readat(None, 0)):
+    #   self.Bfile.writeat(data, offset)
+    #Write File
+    #Creating and acquiring a lock prevents other threads from performing concurrent operations to the Bfile in this case, 
+    #Having concurrent operations occur means that a two or more threads attempt to access a single resource, creating a race condition, causing unpredictable results 
+    self.lock = createlock()
+    self.lock.acquire(True)
+    # Write the requested data to the B file using the sandbox's writeat call
+    if offset < 0:
+      # Instead of returning none, raise an argument error 
+        raise RepyArgumentError
+        self.lock.release()
+    # If the current offset is greater than the length of the data in the Bfile
+    elif offset > len(self.Bfile.readat(None,0)):
+      #Identified the proper error, instead of returning None
+        raise SeekPastEndOfFileError
+        self.lock.release()
+    else:
+      self.Bfile.writeat(data,offset)
+      self.lock.release()
+
+
   def readat(self,bytes,offset):
+    #Read File
     # Read from the A file using the sandbox's readat...
-    return self.Afile.readat(bytes,offset)
+    #Create the lock 
+    self.lock = createlock()
+    #When the lock is acquired, by nature it blocks another thread from trying to access the resource in question 
+    self.lock.acquire(True)
+    #Read the length of data in the Afile
+    length = len(self.Afile.readat(None,0))
+    #Offset cannot be negative, and the length of the data in Afile cannot be negative
+    if length < 0 or offset < 0:
+      #Raise an argument error otherwise
+      raise RepyArgumentError
+      self.lock.release()
+      # The passed offset is itself greater 
+    elif offset >= len(self.Afile.readat(None,0)):
+      raise SeekPastEndOfFileError
+      self.lock.release()
+    elif bytes != None and bytes > length:
+      raise SeekPastEndOfFileError
+      self.lock.release()
+    # the length of the data in Afile plus its offset is greater than Afile size: this already would raise an error, if the bytes (aka data is nonzero)
+    elif bytes != None and (len(self.Afile.readat(None,0)) < offset+length):
+      raise RepyArgumentError
+      self.lock.release()
+    else:
+      try:
+         read_data = self.Afile.readat(bytes,offset)
+         self.lock.release()
+         return read_data
+      except:
+         raise RepyArgumentError
      
-
-
   def close(self):
     #Important things to remember when closing a file:
     # Check for file starting with 'S' and ending with 'E'
@@ -84,7 +130,7 @@ class ABFile():
       #Discard File B
       removefile(self.Bfn)
     else:
-      # If file be is invalid, missing the 'S' and 'E' requuirement, then Discard file B, keep file A
+      # If file b is invalid, missing the 'S' and 'E' requirement, then Discard file B, keep file A
       self.Afile.close()
       self.Bfile.close()
       removefile(self.Afn)
