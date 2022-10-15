@@ -27,9 +27,27 @@ class ABFile():
 
     # make the files and add 'SE' to the readat file...
     if create:
-      self.Afile = openfile(self.Afn,create)
-      self.Bfile = openfile(self.Bfn,create)
-      self.Afile.writeat('SE',0)
+      # If create is true, check for an existing Afile and Bfile  
+      if self.Afn in listfiles():
+        #If the file exists, open the files and replace the contents of Bfile with Afile
+        self.Afile = openfile(self.Afn,create)
+        self.Bfile = openfile(self.Bfn,create)
+        self.Bfile.writeat(self.Afile.readat(None,0),0)
+      else:
+        # If the files do not exist, then create the files and append 'SE' to them
+        self.Afile = openfile(self.Afn,create)
+        self.Bfile = openfile(self.Bfn,create)
+        self.Afile.writeat('SE', 0)
+    else:
+      #if create is False
+      if self.Afn in listfiles():
+        #File Exists
+        self.Afile = openfile(self.Afn,True)
+        self.Bfile = openfile(self.Bfn,True)
+        self.Bfile.writeat(self.Afile.readat(None,0),0)
+      else:
+        #Does not exist and False
+        raise FileNotFoundError
 
 
   def writeat(self,data,offset):
