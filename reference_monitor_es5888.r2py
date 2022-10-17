@@ -64,21 +64,26 @@ class ABFile():
     self.lock = createlock()
     self.lock.acquire(True)
     # Write the requested data to the B file using the sandbox's writeat call
-    if offset < 0:
+    if offset < 0 or len(data) < 0:
       # Instead of returning none, raise an argument error, offset cannot be negative 
-        raise RepyArgumentError
-        self.lock.release()
+      self.lock.release()
+      # raise RepyArgumentError
+      return None
     # If the current offset is greater than the length of the data in the Bfile
     elif offset > len(self.Bfile.readat(None,0)):
       #Identified the proper error, instead of returning None
-        raise SeekPastEndOfFileError
-        self.lock.release()
+      self.lock.release()
+      return None 
+    elif (offset + len(self.Bfile.readat(None, 0)) > len(self.Bfile.readat(None, 0))) and data != None:
+      self.Bfile.length = offset + len(self.Bfile.readat(None, 0))
+      self.Bfile.writeat(data,offset)
+      self.lock.release()
     else:
       self.Bfile.writeat(data,offset)
       #Below line is highlighted, meaning that it is reached in code
       self.lock.release()
 
-
+  # Do not raise errors 
   def readat(self,bytes,offset):
     #Read File
     # Read from the A file using the sandbox's readat...
@@ -91,26 +96,33 @@ class ABFile():
     #Offset cannot be negative, and the length of the data in Afile cannot be negative
     if length < 0 or offset < 0:
       #Raise an argument error otherwise
+      # raise RepyArgumentError
       self.lock.release()
-      raise RepyArgumentError
+      return None
       # The passed offset is itself greater 
     elif offset >= len(self.Afile.readat(None,0)):
+      # raise SeekPastEndOfFileError
       self.lock.release()
-      raise SeekPastEndOfFileError
+      return None
     elif bytes != None and bytes > length:
       self.lock.release()
-      raise SeekPastEndOfFileError
+      # raise SeekPastEndOfFileError
+      return None
     # the length of the data in Afile plus its offset is greater than Afile size: this already would raise an error, if the bytes (aka data is nonzero)
     elif bytes != None and (len(self.Afile.readat(None,0)) < offset+length):
+      # raise RepyArgumentError
       self.lock.release()
-      raise RepyArgumentError
+      return None
     else:
       try:
          read_data = self.Afile.readat(bytes,offset)
          self.lock.release()
          return read_data
       except:
-         raise RepyArgumentError
+        #  raise RepyArgumentError
+        return None
+    # We need some way to release the lock to prevent a deadlock here 
+    # self.lock.release
      
   def close(self):
     #Important things to remember when closing a file:
