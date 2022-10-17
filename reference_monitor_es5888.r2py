@@ -65,7 +65,7 @@ class ABFile():
     self.lock.acquire(True)
     # Write the requested data to the B file using the sandbox's writeat call
     if offset < 0:
-      # Instead of returning none, raise an argument error 
+      # Instead of returning none, raise an argument error, offset cannot be negative 
         raise RepyArgumentError
         self.lock.release()
     # If the current offset is greater than the length of the data in the Bfile
@@ -75,6 +75,7 @@ class ABFile():
         self.lock.release()
     else:
       self.Bfile.writeat(data,offset)
+      #Below line is highlighted, meaning that it is reached in code
       self.lock.release()
 
 
@@ -90,19 +91,19 @@ class ABFile():
     #Offset cannot be negative, and the length of the data in Afile cannot be negative
     if length < 0 or offset < 0:
       #Raise an argument error otherwise
-      raise RepyArgumentError
       self.lock.release()
+      raise RepyArgumentError
       # The passed offset is itself greater 
     elif offset >= len(self.Afile.readat(None,0)):
-      raise SeekPastEndOfFileError
       self.lock.release()
+      raise SeekPastEndOfFileError
     elif bytes != None and bytes > length:
-      raise SeekPastEndOfFileError
       self.lock.release()
+      raise SeekPastEndOfFileError
     # the length of the data in Afile plus its offset is greater than Afile size: this already would raise an error, if the bytes (aka data is nonzero)
     elif bytes != None and (len(self.Afile.readat(None,0)) < offset+length):
-      raise RepyArgumentError
       self.lock.release()
+      raise RepyArgumentError
     else:
       try:
          read_data = self.Afile.readat(bytes,offset)
