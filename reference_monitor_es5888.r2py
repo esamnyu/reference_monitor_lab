@@ -115,12 +115,12 @@ class ABFile():
       return None
     else:
       try:
-         read_data = self.Afile.readat(bytes,offset)
-         self.lock.release()
-         return read_data
+        read_data = self.Afile.readat(bytes,offset)
+        self.lock.release()
+        return read_data
       except:
-        #  raise RepyArgumentError
-        return None
+        raise RepyArgumentError
+        # return None
     # We need some way to release the lock to prevent a deadlock here 
     # self.lock.release
      
