@@ -1,4 +1,3 @@
-
 """
 This security layer inadequately handles A/B storage for files in RepyV2.
 
@@ -17,17 +16,16 @@ EXCP="exceptions"
 TARGET="target"
 FUNC="func"
 OBJC="objc"
-
-mycontext['lock'] = createlock()
-
+mycontext['lock'] = createlock()  
 class ABFile():
   def __init__(self,filename,create):
     # globals
-    mycontext['debug'] = False   
+    mycontext['debug'] = False 
+    
     # local (per object) reference to the underlying file
     self.Afn = filename+'.a'
     self.Bfn = filename+'.b'
-    
+    mycontext['lock'].acquire(True)
     # make the files and add 'SE' to the readat file...
     if create:
       # If create is true, check for an existing Afile and Bfile  
@@ -54,36 +52,8 @@ class ABFile():
 
 
   def writeat(self,data,offset):
-    # Write the requested data to the B file using the sandbox's writeat call
-    # if len(self.Bfile.readat(None, 0)) < len(data):
-    # 	return None
-    # if len(self.Bfile.readat(None, 0)) < offset:
-    #   return None
-    # if len(data) <= len(self.Bfile.readat(None, 0)):
-    #   self.Bfile.writeat(data, offset)
-    #Write File
-    #Creating and acquiring a lock prevents other threads from performing concurrent operations to the Bfile in this case, 
-    #Having concurrent operations occur means that a two or more threads attempt to access a single resource, creating a race condition, causing unpredictable results 
-    mycontext['lock'] = acquire(True)
-    # Write the requested data to the B file using the sandbox's writeat call
-    if offset < 0 or len(data) < 0:
-      # Instead of returning none, raise an argument error, offset cannot be negative 
-    
-      # raise RepyArgumentError
-      return None
-    # If the current offset is greater than the length of the data in the Bfile
-    elif offset > len(self.Bfile.readat(None,0)):
-      #Identified the proper error, instead of returning None
-    #   self.lock.release()
-      return None 
-    elif (offset + len(self.Bfile.readat(None, 0)) > len(self.Bfile.readat(None, 0))) and data != None:
-      self.Bfile.length = offset + len(self.Bfile.readat(None, 0))
-      self.Bfile.writeat(data,offset)
-      #self.lock.release()
-    else:
-      self.Bfile.writeat(data,offset)
-      #Below line is highlighted, meaning that it is reached in code
-      #self.lock.release()
+    if offset >= 0 and (offset <= len(self.Bfile.readat(None,0))):
+       self.Bfile.writeat(data,offset)
 
   # Do not raise errors 
   def readat(self,bytes,offset):
@@ -92,33 +62,33 @@ class ABFile():
     #Create the lock 
     # self.lock = createlock()
     #When the lock is acquired, by nature it blocks another thread from trying to access the resource in question 
-    # self.lock.acquire(True)
+    # mycontext['lock'].acquire(True)  
     #Read the length of data in the Afile
     length = len(self.Afile.readat(None,0))
     #Offset cannot be negative, and the length of the data in Afile cannot be negative
     if length < 0 or offset < 0:
       #Raise an argument error otherwise
       # raise RepyArgumentError
-      # mygloballock['lock'] = release()
+    #   mycontext['lock'].release()
       return None
       # The passed offset is itself greater 
     elif offset >= len(self.Afile.readat(None,0)):
       # raise SeekPastEndOfFileError
-      # mygloballock['lock'] = release()
+    #   mycontext['lock'].release()
       return None
     elif bytes != None and bytes > length:
-      # mygloballock['lock'] = release()
+    #   mycontext['lock'].release()
       # raise SeekPastEndOfFileError
       return None
     # the length of the data in Afile plus its offset is greater than Afile size: this already would raise an error, if the bytes (aka data is nonzero)
     elif bytes != None and (len(self.Afile.readat(None,0)) < offset+length):
       # raise RepyArgumentError
-    #   smygloballock['lock'] = release()
+    #   mycontext['lock'].release()
       return None
     else:
       try:
         read_data = self.Afile.readat(bytes,offset)
-        # mygloballock['lock'] = release()
+        # mycontext['lock'].release()
         return read_data
       except:
         raise RepyArgumentError
@@ -144,7 +114,6 @@ class ABFile():
       openfile(backup_file_a, True).writeat(data,0)
       #Discard File B
       removefile(self.Bfn)
-      mycontext['lock'] = release()
     else:
       # If file b is invalid, missing the 'S' and 'E' requirement, then Discard file B, keep file A
       self.Afile.close()
@@ -152,7 +121,7 @@ class ABFile():
       removefile(self.Afn)
       openfile(backup_file_a ,True).writeat(backup_data_a,0)
       removefile(self.Bfn)
-      mycontext['lock'] = release()
+    mycontext['lock'].release()
 
 
 
