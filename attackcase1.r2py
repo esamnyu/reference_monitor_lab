@@ -1,0 +1,14 @@
+if "testfile.txt.a" in listfiles():
+    removefile("testfile.txt.a")
+if "testfile.txt.b" in listfiles():
+    removefile("testfile.txt.b")
+myfile = ABopenfile("testfile.txt", True)  # Create an AB file
+
+myfile.writeat('STJYESE', 0)
+myfile.readat(None, 5)
+myfile.close()
+
+
+
+ 
+
